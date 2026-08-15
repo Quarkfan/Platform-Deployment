@@ -98,9 +98,26 @@ try {
     const pages = [];
     for (const pageName of pageNames) {
       await page.getByRole("button", { name: pageName, exact: true }).click();
-      await page
-        .getByRole("heading", { name: pageName, exact: true })
-        .waitFor();
+      try {
+        await page
+          .getByRole("heading", { name: pageName, exact: true })
+          .waitFor();
+      } catch (error) {
+        console.error(
+          JSON.stringify(
+            {
+              stage: "navigation",
+              target,
+              pageName,
+              url: page.url(),
+              pageText: (await page.locator("body").innerText()).slice(0, 3000),
+            },
+            null,
+            2,
+          ),
+        );
+        throw error;
+      }
       await page.waitForTimeout(150);
       if (
         captureScreenshots &&
