@@ -48,16 +48,26 @@ try {
     });
     const page = await context.newPage();
     const authResponses = [];
+    const pageErrors = [];
+    const failedResponses = [];
+    page.on("pageerror", (error) => {
+      pageErrors.push({
+        name: error.name,
+        message: error.message.slice(0, 500),
+      });
+    });
     page.on("response", async (response) => {
+      if (response.status() >= 500)
+        failedResponses.push({
+          path: new URL(response.url()).pathname,
+          status: response.status(),
+        });
       if (!response.url().includes("/api/auth/")) return;
       let error;
       if (response.status() >= 400) {
         const payload = await response.json().catch(() => ({}));
         error = {
           code: String(payload?.code ?? payload?.error?.code ?? ""),
-          message: String(
-            payload?.message ?? payload?.error?.message ?? "",
-          ).slice(0, 300),
         };
       }
       authResponses.push({
@@ -86,8 +96,9 @@ try {
             stage: "login",
             target,
             url: page.url(),
-            pageText: (await page.locator("body").innerText()).slice(0, 2000),
             authResponses,
+            pageErrors,
+            failedResponses,
           },
           null,
           2,
@@ -110,7 +121,13 @@ try {
               target,
               pageName,
               url: page.url(),
-              pageText: (await page.locator("body").innerText()).slice(0, 3000),
+              pageErrors,
+              failedResponses,
+              structure: await page.evaluate(() => ({
+                mainPresent: Boolean(document.querySelector("main")),
+                headingCount: document.querySelectorAll("h1,h2,h3").length,
+                activeNavCount: document.querySelectorAll("nav .active").length,
+              })),
             },
             null,
             2,
@@ -139,7 +156,6 @@ try {
           })
           .map((element) => ({
             tag: element.tagName,
-            text: element.textContent?.trim().slice(0, 80) ?? "",
             width: element.clientWidth,
             scrollWidth: element.scrollWidth,
             height: element.clientHeight,
