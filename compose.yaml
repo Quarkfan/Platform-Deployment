@@ -1,0 +1,365 @@
+x-node-service: &node-service
+  restart: unless-stopped
+  init: true
+  security_opt:
+    - no-new-privileges:true
+  networks:
+    - platform
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+x-common-environment: &common-environment
+  NODE_ENV: production
+  DATABASE_URL: postgres://quarkfan:${POSTGRES_PASSWORD}@postgres:5432/quarkfan
+  INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: quarkfan
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: quarkfan
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    shm_size: 256mb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quarkfan -d quarkfan"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - platform
+
+  message-gateway:
+    <<: *node-service
+    build:
+      context: ${QFT_ROOT:-..}/Message-Gateway
+    environment:
+      <<: *common-environment
+      PORT: 4101
+      QFT_LARK_PRIMARY: ${QFT_LARK_PRIMARY}
+      QFT_RUNTIME_SINK: '{"token":"${INTERNAL_SERVICE_TOKEN}"}'
+      GOVERNANCE_URL: http://governance-center:4108
+      RESOURCE_URL: http://resource-center:4107
+    healthcheck: &node-health
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:'+(process.env.PORT||4101)+'/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  context-hub:
+    <<: *node-service
+    build:
+      context: ${QFT_ROOT:-..}/Context-Hub
+    environment:
+      <<: *common-environment
+      PORT: 4102
+      RESOURCE_URL: http://resource-center:4107
+    depends_on:
+      postgres: { condition: service_healthy }
+      resource-center: { condition: service_healthy }
+    healthcheck: *node-health
+
+  model-hub:
+    <<: *node-service
+    build:
+      context: ${QFT_ROOT:-..}/Model-Hub
+    environment:
+      <<: *common-environment
+      PORT: 4103
+      QFT_PROVIDER_PRIMARY: ${QFT_PROVIDER_PRIMARY}
+      GOVERNANCE_URL: http://governance-center:4108
+    healthcheck: *node-health
+
+  capability-registry:
+    <<: *node-service
+    build:
+      context: ${QFT_ROOT:-..}/Capability-Registry
+    environment:
+      <<: *common-environment
+      PORT: 4104
+      EXECUTABLE_CAPABILITIES_ENABLED: "true"
+      CAPABILITY_WORKER_URL: http://capability-worker:4109
+      BROWSER_URL: http://browser-worker:4110
+      MESSAGE_GATEWAY_URL: http://message-gateway:4101
+      RESOURCE_URL: http://resource-center:4107
+      GOVERNANCE_URL: http://governance-center:4108
+      MCP_ALLOWED_ORIGINS: ${MCP_ALLOWED_ORIGINS:-}
+      MCP_STDIO_ALLOWED_COMMANDS: ${MCP_STDIO_ALLOWED_COMMANDS:-}
+      CAPABILITY_PACKAGE_ROOT: /var/lib/quarkfan/capability-packages
+    volumes:
+      - capability-packages:/var/lib/quarkfan/capability-packages
+    networks:
+      - platform
+      - capability-worker-control
+    depends_on:
+      postgres: { condition: service_healthy }
+      capability-worker: { condition: service_healthy }
+      message-gateway: { condition: service_healthy }
+    healthcheck: *node-health
+
+  capability-worker:
+    restart: unless-stopped
+    init: true
+    build:
+      context: ${QFT_ROOT:-..}/Capability-Registry
+      dockerfile: Dockerfile.worker
+    environment:
+      NODE_ENV: production
+      PORT: 4109
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+      CAPABILITY_PACKAGE_ROOT: /var/lib/quarkfan/capability-packages
+      CAPABILITY_WORKSPACE_ROOT: /var/lib/quarkfan/capability-workspaces
+    volumes:
+      - capability-packages:/var/lib/quarkfan/capability-packages:ro
+      - capability-workspaces:/var/lib/quarkfan/capability-workspaces
+    networks:
+      - capability-worker-control
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,noexec,nosuid,nodev
+    cap_drop:
+      - ALL
+    pids_limit: 64
+    mem_limit: 256m
+    cpus: 0.50
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:4109/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  governance-center:
+    <<: *node-service
+    build:
+      context: ${QFT_ROOT:-..}/Governance-Center
+    environment:
+      <<: *common-environment
+      PORT: 4108
+      CREDENTIAL_MASTER_KEY_BASE64: ${CREDENTIAL_MASTER_KEY_BASE64}
+    healthcheck: *node-health
+
+  resource-center:
+    <<: *node-service
+    build:
+      context: ${QFT_ROOT:-..}/Resource-Center
+    environment:
+      <<: *common-environment
+      PORT: 4107
+      RESOURCE_ROOT: /var/lib/quarkfan/resources
+      FFMPEG_PATH: /usr/bin/ffmpeg
+      MEDIA_CONCURRENCY: 1
+    volumes:
+      - resource-data:/var/lib/quarkfan/resources
+    healthcheck: *node-health
+
+  runtime-center:
+    <<: *node-service
+    build:
+      context: ${QFT_ROOT:-..}/Runtime-Center
+    environment:
+      <<: *common-environment
+      PORT: 4105
+      MODEL_HUB_URL: http://model-hub:4103
+      CONTEXT_HUB_URL: http://context-hub:4102
+      CAPABILITY_REGISTRY_URL: http://capability-registry:4104
+      GOVERNANCE_URL: http://governance-center:4108
+      MESSAGE_GATEWAY_URL: http://message-gateway:4101
+      SCHEDULER_URL: http://scheduler-center:4106
+      RESOURCE_URL: http://resource-center:4107
+      RUNTIME_WORKSPACE_ROOT: /var/lib/quarkfan/workspaces
+      CLAUDE_RUNTIME_ENABLED: ${CLAUDE_RUNTIME_ENABLED:-false}
+      CLAUDE_RUNTIME_BASE_URL: ${CLAUDE_RUNTIME_BASE_URL:-}
+      CLAUDE_RUNTIME_AUTH_TOKEN: ${CLAUDE_RUNTIME_AUTH_TOKEN:-}
+      CLAUDE_RUNTIME_MODEL: ${CLAUDE_RUNTIME_MODEL:-}
+    volumes:
+      - runtime-workspaces:/var/lib/quarkfan/workspaces
+    depends_on:
+      postgres: { condition: service_healthy }
+      model-hub: { condition: service_healthy }
+      context-hub: { condition: service_healthy }
+      capability-registry: { condition: service_healthy }
+      governance-center: { condition: service_healthy }
+    healthcheck: *node-health
+
+  scheduler-center:
+    <<: *node-service
+    build:
+      context: ${QFT_ROOT:-..}/Scheduler-Center
+    environment:
+      <<: *common-environment
+      PORT: 4106
+      RUNTIME_URL: http://runtime-center:4105
+      MESSAGE_GATEWAY_URL: http://message-gateway:4101
+      RUNTIME_WAIT_TIMEOUT_MS: 3600000
+      QUEUE_CONCURRENCY: 2
+    depends_on:
+      postgres: { condition: service_healthy }
+      runtime-center: { condition: service_healthy }
+      message-gateway: { condition: service_healthy }
+    healthcheck: *node-health
+
+  browser-worker:
+    <<: *node-service
+    build:
+      context: ${QFT_ROOT:-..}/Runtime-Center
+      dockerfile: Dockerfile.browser
+    environment:
+      NODE_ENV: production
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+      BROWSER_PORT: 4110
+      GOVERNANCE_URL: http://governance-center:4108
+      RESOURCE_URL: http://resource-center:4107
+      MH_URL: http://model-hub:4103
+      BROWSER_SESSION_ROOT: /var/lib/quarkfan/browser-sessions
+      BROWSER_STATE_KEY_BASE64: ${CREDENTIAL_MASTER_KEY_BASE64}
+      BROWSER_SESSION_TTL_MS: ${BROWSER_SESSION_TTL_MS:-1800000}
+      BROWSER_ALLOW_PRIVATE_NETWORKS: ${BROWSER_ALLOW_PRIVATE_NETWORKS:-false}
+    volumes:
+      - browser-sessions:/var/lib/quarkfan/browser-sessions
+    shm_size: 512mb
+    depends_on:
+      postgres: { condition: service_healthy }
+      governance-center: { condition: service_healthy }
+      resource-center: { condition: service_healthy }
+      model-hub: { condition: service_healthy }
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:4110/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  console:
+    <<: *node-service
+    build:
+      context: ${QFT_ROOT:-..}/Platform-Console
+    environment:
+      <<: *common-environment
+      PORT: 8080
+      DATABASE_URL: postgres://quarkfan:${POSTGRES_PASSWORD}@postgres:5432/quarkfan
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+      LARK_OAUTH_REDIRECT_BASE_URL: ${LARK_OAUTH_REDIRECT_BASE_URL:-${BETTER_AUTH_URL}}
+      TRUSTED_ORIGINS: ${TRUSTED_ORIGINS}
+      AUTH_SECURE_COOKIES: ${AUTH_SECURE_COOKIES:-false}
+      INITIAL_ADMIN_USERNAME: ${INITIAL_ADMIN_USERNAME}
+      INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL}
+      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD}
+      MG_URL: http://message-gateway:4101
+      CH_URL: http://context-hub:4102
+      MH_URL: http://model-hub:4103
+      CR_URL: http://capability-registry:4104
+      RUNTIME_URL: http://runtime-center:4105
+      SCHEDULER_URL: http://scheduler-center:4106
+      RESOURCE_URL: http://resource-center:4107
+      GOVERNANCE_URL: http://governance-center:4108
+      BROWSER_URL: http://browser-worker:4110
+    ports:
+      - "${CONSOLE_BIND_ADDRESS:-127.0.0.1}:${CONSOLE_PORT:-8080}:8080"
+    depends_on:
+      postgres: { condition: service_healthy }
+      message-gateway: { condition: service_healthy }
+      context-hub: { condition: service_healthy }
+      model-hub: { condition: service_healthy }
+      capability-registry: { condition: service_healthy }
+      runtime-center: { condition: service_healthy }
+      scheduler-center: { condition: service_healthy }
+      resource-center: { condition: service_healthy }
+      governance-center: { condition: service_healthy }
+      browser-worker: { condition: service_healthy }
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:8080/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  mock-model:
+    image: node:22-alpine
+    profiles: ["acceptance"]
+    command: ["node", "/tests/mock-model.mjs"]
+    volumes:
+      - ./tests:/tests:ro
+    networks:
+      - platform
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:8090/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+
+  acceptance:
+    image: node:22-alpine
+    profiles: ["acceptance"]
+    command: ["node", "/tests/e2e.mjs"]
+    environment:
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+    volumes:
+      - ./tests:/tests:ro
+    networks:
+      - platform
+    depends_on:
+      mock-model: { condition: service_healthy }
+      message-gateway: { condition: service_healthy }
+      model-hub: { condition: service_healthy }
+      runtime-center: { condition: service_healthy }
+      scheduler-center: { condition: service_healthy }
+      resource-center: { condition: service_healthy }
+      browser-worker: { condition: service_healthy }
+
+networks:
+  platform:
+    driver: bridge
+  capability-worker-control:
+    driver: bridge
+    internal: true
+
+volumes:
+  postgres-data:
+    name: quarkfantools-postgres-data
+  resource-data:
+    name: quarkfantools-resource-data
+  runtime-workspaces:
+    name: quarkfantools-runtime-workspaces
+  browser-sessions:
+    name: quarkfantools-browser-sessions
+  capability-packages:
+    name: quarkfantools-capability-packages
+  capability-workspaces:
+    name: quarkfantools-capability-workspaces
