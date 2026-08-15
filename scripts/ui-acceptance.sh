@@ -15,9 +15,9 @@ cleanup() {
       -e QA_USERNAME="$qa_username" \
       -e QA_ACTION=delete \
       -e CONSOLE_AUTH_MODULE=file:///app/dist-server/auth.js \
-      console node /tmp/qft-qa-user.mjs >/dev/null 2>&1 || status=1
+      console node /app/qft-qa-user.mjs >/dev/null 2>&1 || status=1
   fi
-  qft_docker compose exec -T console rm -f /tmp/qft-qa-user.mjs >/dev/null 2>&1 || true
+  qft_docker compose exec -T -u root console rm -f /app/qft-qa-user.mjs >/dev/null 2>&1 || true
   qft_docker compose exec -T browser-worker rm -rf /tmp/qft-ui.mjs /tmp/qft-ui-qa >/dev/null 2>&1 || true
   return "$status"
 }
@@ -30,14 +30,14 @@ browser_container="$(qft_docker compose ps -q browser-worker)"
   printf 'Console and Browser Worker must be running.\n' >&2
   exit 1
 }
-qft_docker cp tests/qa-user.mjs "${console_container}:/tmp/qft-qa-user.mjs"
+qft_docker cp tests/qa-user.mjs "${console_container}:/app/qft-qa-user.mjs"
 qft_docker cp tests/ui.mjs "${browser_container}:/tmp/qft-ui.mjs"
 
 qft_docker compose exec -T \
   -e QA_USERNAME="$qa_username" \
   -e QA_PASSWORD="$qa_password" \
   -e CONSOLE_AUTH_MODULE=file:///app/dist-server/auth.js \
-  console node /tmp/qft-qa-user.mjs >/dev/null
+  console node /app/qft-qa-user.mjs >/dev/null
 user_created=true
 
 qft_docker compose exec -T \
