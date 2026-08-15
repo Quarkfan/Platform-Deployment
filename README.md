@@ -28,7 +28,7 @@ The bootstrap administrator must change the initial password after first login b
 - `./scripts/backup.sh --online`: non-quiesced operational snapshot when a short write pause is unacceptable.
 - `./scripts/verify-backup.sh <backup-directory>`: checksum and archive integrity verification.
 - `./scripts/restore.sh --from <backup-directory> --confirm`: guarded full restore with a pre-restore backup and final smoke check.
-- `BROWSER_ALLOW_PRIVATE_NETWORKS=true docker compose --profile acceptance run --rm acceptance`: isolated end-to-end acceptance suite against the internal mock service. Recreate Browser Worker without the override immediately afterwards.
+- `./scripts/acceptance.sh`: isolated end-to-end suite against the internal mock service; always restores Browser Worker's production network policy and stops the mock service on exit.
 - `docker compose up -d --build <service>`: rolling center update.
 - `docker compose down`: stop without deleting durable volumes.
 

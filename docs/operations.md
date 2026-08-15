@@ -18,6 +18,8 @@ On the server, run `scripts/deploy.sh` from `Platform-Deployment`. The script va
 
 Run `scripts/smoke.sh` for an eleven-service health check. It uses the current user's Docker access when available and otherwise falls back to passwordless `sudo docker`; it fails with an actionable message when neither path is configured.
 
+Run `scripts/acceptance.sh` for the complete cross-center acceptance suite. It temporarily permits Browser Worker to reach the internal mock service and uses an exit trap to restore the production private-network restriction, stop the mock service and rerun smoke checks even when acceptance fails or is interrupted.
+
 ## Recovery
 
 Create the default quiesced backup before upgrades or configuration changes:
