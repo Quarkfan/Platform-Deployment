@@ -29,6 +29,7 @@ The bootstrap administrator must change the initial password after first login b
 - `./scripts/verify-backup.sh <backup-directory>`: checksum and archive integrity verification.
 - `./scripts/restore.sh --from <backup-directory> --confirm`: guarded full restore with a pre-restore backup and final smoke check.
 - `./scripts/acceptance.sh`: isolated end-to-end suite against the internal mock service; always restores Browser Worker's production network policy and stops the mock service on exit.
+- `./scripts/ui-acceptance.sh`: desktop/mobile Dashboard layout validation with a disposable QA account and no exported server screenshots.
 - `docker compose up -d --build <service>`: rolling center update.
 - `docker compose down`: stop without deleting durable volumes.
 

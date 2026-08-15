@@ -20,6 +20,8 @@ Run `scripts/smoke.sh` for an eleven-service health check. It uses the current u
 
 Run `scripts/acceptance.sh` for the complete cross-center acceptance suite. It temporarily permits Browser Worker to reach the internal mock service and uses an exit trap to restore the production private-network restriction, stop the mock service and rerun smoke checks even when acceptance fails or is interrupted.
 
+Run `scripts/ui-acceptance.sh` to validate all fourteen Dashboard pages at desktop and mobile viewports. The script creates a random disposable QA account, captures only structural layout results, exports no screenshots, and removes the account and temporary files on every exit path.
+
 ## Recovery
 
 Create the default quiesced backup before upgrades or configuration changes:
