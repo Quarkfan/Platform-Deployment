@@ -16,6 +16,8 @@ Run `scripts/sync-source.sh [user@host:/absolute/path]` from a development check
 
 On the server, run `scripts/deploy.sh` from `Platform-Deployment`. The script validates Compose, builds sequentially for small hosts, starts the stack, and prints service status.
 
+Run `scripts/smoke.sh` for a ten-service health check. It uses the current user's Docker access when available and otherwise falls back to passwordless `sudo docker`; it fails with an actionable message when neither path is configured.
+
 ## Recovery
 
 1. Stop write traffic with `docker compose stop console message-gateway scheduler-center`.
