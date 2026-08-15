@@ -96,6 +96,8 @@ printf '{"formatVersion":1,"createdAt":"%s","mode":"%s","database":"postgresql",
     metadata.json > MANIFEST.sha256
 )
 
+scripts/verify-backup.sh "$staging"
+
 mv "$staging" "$target"
 restart_applications
 applications_stopped=false
