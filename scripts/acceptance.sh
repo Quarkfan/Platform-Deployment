@@ -15,6 +15,11 @@ restore_production_profile() {
 trap restore_production_profile EXIT
 trap 'exit 130' INT TERM
 
-export BROWSER_ALLOW_PRIVATE_NETWORKS=true
-qft_docker compose --profile acceptance up -d --force-recreate browser-worker mock-model
-qft_docker compose --profile acceptance run --rm acceptance
+acceptance_compose=(
+  compose
+  -f compose.yaml
+  -f tests/compose.acceptance.yaml
+  --profile acceptance
+)
+qft_docker "${acceptance_compose[@]}" up -d --force-recreate browser-worker mock-model
+qft_docker "${acceptance_compose[@]}" run --rm acceptance

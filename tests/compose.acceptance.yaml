@@ -1,0 +1,4 @@
+services:
+  browser-worker:
+    environment:
+      BROWSER_ALLOW_PRIVATE_NETWORKS: "true"

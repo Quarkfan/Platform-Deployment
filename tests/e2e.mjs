@@ -494,7 +494,7 @@ let browserRun = await post(browser, "/v1/browser/workflows", browserRequest);
 assert.equal(
   browserRun.status,
   "waiting_approval",
-  "Browser download must stop at an approval checkpoint",
+  `Browser download must stop at an approval checkpoint: ${JSON.stringify(browserRun)}`,
 );
 const browserApprovalId = browserRun.steps.at(-1)?.output?.approvalId;
 assert.ok(browserApprovalId);
