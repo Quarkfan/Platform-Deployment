@@ -16,7 +16,7 @@ Run `scripts/sync-source.sh [user@host:/absolute/path]` from a development check
 
 On the server, run `scripts/deploy.sh` from `Platform-Deployment`. The script validates Compose, builds sequentially for small hosts, starts the stack, and prints service status.
 
-Run `scripts/smoke.sh` for a ten-service health check. It uses the current user's Docker access when available and otherwise falls back to passwordless `sudo docker`; it fails with an actionable message when neither path is configured.
+Run `scripts/smoke.sh` for an eleven-service health check. It uses the current user's Docker access when available and otherwise falls back to passwordless `sudo docker`; it fails with an actionable message when neither path is configured.
 
 ## Recovery
 
@@ -42,7 +42,7 @@ Restore requires an explicit confirmation flag:
 ./scripts/restore.sh --from /absolute/path/to/backup --confirm
 ```
 
-The restore script verifies the backup, creates a quiesced pre-restore backup, stops application services, restores PostgreSQL and every persistent volume, starts the platform, and runs the ten-service smoke check. Test restore procedures on an isolated host or clone of production; do not use the live installation as a rehearsal target.
+The restore script verifies the backup, creates a quiesced pre-restore backup, stops application services, restores PostgreSQL and every persistent volume, starts the platform, and runs the eleven-service smoke check. Test restore procedures on an isolated host or clone of production; do not use the live installation as a rehearsal target.
 
 ## Capacity
 
