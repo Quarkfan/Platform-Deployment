@@ -20,10 +20,29 @@ Run `scripts/smoke.sh` for a ten-service health check. It uses the current user'
 
 ## Recovery
 
-1. Stop write traffic with `docker compose stop console message-gateway scheduler-center`.
-2. Restore PostgreSQL with `pg_restore --clean --if-exists` inside the database container.
-3. Restore the `resource-data`, `runtime-workspaces`, and `browser-sessions` volumes as required.
-4. Start centers, run `scripts/smoke.sh`, then restore ingress services.
+Create the default quiesced backup before upgrades or configuration changes:
+
+```bash
+./scripts/backup.sh
+```
+
+This pauses application writers, dumps PostgreSQL, archives all five persistent application volumes, creates a SHA-256 manifest, verifies the result, and restarts the stack. Use `./scripts/backup.sh --online` only when a short pause is unacceptable; its database and volume snapshots are individually readable but are not guaranteed to represent one cross-service instant.
+
+Backups intentionally exclude `.env` and live credentials. Store the deployment secret material separately in an encrypted operator-controlled escrow. The generated `SECRET-ESCROW.txt` records this requirement without containing the secrets.
+
+Verify a transferred or retained backup before relying on it:
+
+```bash
+./scripts/verify-backup.sh /absolute/path/to/backup
+```
+
+Restore requires an explicit confirmation flag:
+
+```bash
+./scripts/restore.sh --from /absolute/path/to/backup --confirm
+```
+
+The restore script verifies the backup, creates a quiesced pre-restore backup, stops application services, restores PostgreSQL and every persistent volume, starts the platform, and runs the ten-service smoke check. Test restore procedures on an isolated host or clone of production; do not use the live installation as a rehearsal target.
 
 ## Capacity
 

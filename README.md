@@ -24,7 +24,10 @@ The bootstrap administrator must change the initial password after first login b
 
 - `docker compose ps`: center status.
 - `docker compose logs --since=30m <service>`: service logs.
-- `./scripts/backup.sh`: PostgreSQL and resource backup.
+- `./scripts/backup.sh`: quiesced PostgreSQL and all persistent application volumes backup.
+- `./scripts/backup.sh --online`: non-quiesced operational snapshot when a short write pause is unacceptable.
+- `./scripts/verify-backup.sh <backup-directory>`: checksum and archive integrity verification.
+- `./scripts/restore.sh --from <backup-directory> --confirm`: guarded full restore with a pre-restore backup and final smoke check.
 - `BROWSER_ALLOW_PRIVATE_NETWORKS=true docker compose --profile acceptance run --rm acceptance`: isolated end-to-end acceptance suite against the internal mock service. Recreate Browser Worker without the override immediately afterwards.
 - `docker compose up -d --build <service>`: rolling center update.
 - `docker compose down`: stop without deleting durable volumes.
