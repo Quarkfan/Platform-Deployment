@@ -66,7 +66,7 @@ for entry in "${volumes[@]}"; do
     -eu -c "find /target -mindepth 1 -delete; tar -xzf /backup/${name}.tar.gz -C /target"
 done
 
-qft_docker compose up -d "${qft_services[@]}" >/dev/null
+qft_docker compose up -d --wait "${qft_services[@]}" >/dev/null
 restart_required=false
 trap - EXIT INT TERM
 scripts/smoke.sh

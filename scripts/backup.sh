@@ -21,7 +21,7 @@ applications_stopped=false
 
 restart_applications() {
   if [[ "$applications_stopped" == true ]]; then
-    qft_docker compose up -d "${qft_services[@]}" >/dev/null
+    qft_docker compose up -d --wait "${qft_services[@]}" >/dev/null
   fi
 }
 
