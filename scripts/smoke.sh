@@ -5,8 +5,7 @@ cd "$(dirname "$0")/.."
 qft_select_docker
 
 services=(message-gateway context-hub model-hub capability-registry runtime-center scheduler-center resource-center governance-center browser-worker capability-worker console)
-edge_container="$(qft_docker compose ps -q edge 2>/dev/null || true)"
-if [[ -n "$edge_container" ]]; then
+if qft_docker compose config --services | grep -qx edge; then
   services+=(edge)
 fi
 for service in "${services[@]}"; do

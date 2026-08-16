@@ -477,7 +477,7 @@ assert.equal(completedBackfill.status, "succeeded", completedBackfill.error);
 const browserRequest = {
   tenantId: "acceptance",
   botId: "acceptance-bot",
-  sessionKey: `acceptance-${Date.now()}`,
+  sessionKey: "acceptance-e2e",
   startUrl: "http://mock-model:8090/browser-test",
   allowedDomains: ["mock-model"],
   actions: [

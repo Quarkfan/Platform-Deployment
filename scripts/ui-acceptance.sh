@@ -30,6 +30,11 @@ browser_container="$(qft_docker compose ps -q browser-worker)"
   printf 'Console and Browser Worker must be running.\n' >&2
   exit 1
 }
+qa_base_url="${QA_BASE_URL:-$(qft_docker compose exec -T console node -e 'process.stdout.write(process.env.BETTER_AUTH_URL ?? "")')}"
+[[ "$qa_base_url" =~ ^https?:// ]] || {
+  printf 'QA_BASE_URL or Console BETTER_AUTH_URL must be an HTTP(S) URL.\n' >&2
+  exit 1
+}
 qft_docker cp tests/qa-user.mjs "${console_container}:/app/qft-qa-user.mjs"
 qft_docker cp tests/ui.mjs "${browser_container}:/tmp/qft-ui.mjs"
 
@@ -43,7 +48,7 @@ user_created=true
 qft_docker compose exec -T \
   -e QA_USERNAME="$qa_username" \
   -e QA_PASSWORD="$qa_password" \
-  -e QA_BASE_URL=http://console:8080 \
+  -e QA_BASE_URL="$qa_base_url" \
   -e QA_OUTPUT=/tmp/qft-ui-qa \
   -e QA_CAPTURE_SCREENSHOTS=false \
   -e QA_PLAYWRIGHT_BASE=/app \

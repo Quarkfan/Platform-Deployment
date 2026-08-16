@@ -24,6 +24,7 @@ const browser = await chromium.launch({
 const reports = [];
 const pageNames = [
   "运行概览",
+  "使用手册",
   "机器人",
   "通道",
   "消息",
