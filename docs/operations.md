@@ -48,6 +48,14 @@ curl --fail --show-error https://tool.example.com/healthz
 openssl s_client -connect tool.example.com:443 -servername tool.example.com -verify_return_error </dev/null
 ```
 
+If loopback SNI succeeds but several external probes report a reset, capture only inbound TLS while an external probe runs:
+
+```bash
+sudo tcpdump -nn -i any 'dst host <public-ip> and dst port 443'
+```
+
+When no probe packet reaches the host, do not weaken TLS, secure cookies or host firewall rules. Check the cloud firewall and, for mainland China hosts, the domain's ICP filing/access-provider status. The supported resolutions are clearing the provider gate, completing filing, or placing the service behind an approved public edge. Plaintext authentication and unusual-port bypasses are not production fixes.
+
 Renew and reinstall the certificate before its `notAfter` date, then recreate only the edge service with `docker compose up -d --force-recreate edge`. Certificate files and private keys are not included in application backups; retain them in the operator-controlled secret escrow.
 
 ## Recovery
