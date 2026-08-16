@@ -20,6 +20,7 @@ const detailEntries = new Map([
   ["上下文", "新增来源"],
   ["模型", "新增 Provider"],
   ["能力", "新增授权"],
+  ["扩展与插件", "新建 Profile"],
   ["调度", "新增任务"],
 ]);
 
@@ -39,6 +40,7 @@ const pageNames = [
   "上下文",
   "模型",
   "能力",
+  "扩展与插件",
   "执行",
   "调度",
   "资源",
@@ -147,6 +149,10 @@ try {
       await page.waitForTimeout(150);
       const detailEntry = detailEntries.get(pageName);
       if (detailEntry) {
+        if (pageName === "扩展与插件")
+          await page
+            .getByRole("button", { name: "Runtime Profile", exact: true })
+            .click();
         await page
           .getByRole("button", { name: detailEntry, exact: true })
           .click();
@@ -154,7 +160,9 @@ try {
           .getByRole("button", { name: "返回列表", exact: true })
           .waitFor();
       }
-      const advancedCount = await page.locator("details.advanced-config").count();
+      const advancedCount = await page
+        .locator("details.advanced-config")
+        .count();
       if (detailEntry) {
         if (!advancedCount)
           throw new Error(`${pageName} 详情页缺少高级配置入口`);
