@@ -14,6 +14,14 @@ const password = process.env.QA_PASSWORD;
 const output = process.env.QA_OUTPUT ?? "/artifacts";
 const captureScreenshots = process.env.QA_CAPTURE_SCREENSHOTS === "true";
 if (!username || !password) throw new Error("QA credentials are required");
+const advancedPages = new Set([
+  "机器人",
+  "通道",
+  "上下文",
+  "模型",
+  "能力",
+  "调度",
+]);
 
 await mkdir(output, { recursive: true });
 const browser = await chromium.launch({
@@ -137,6 +145,13 @@ try {
         throw error;
       }
       await page.waitForTimeout(150);
+      const advancedCount = await page.locator("details.advanced-config").count();
+      if (advancedPages.has(pageName)) {
+        if (!advancedCount)
+          throw new Error(`${pageName} 缺少高级配置入口`);
+        await page.locator("details.advanced-config summary").first().click();
+        await page.waitForTimeout(50);
+      }
       if (
         captureScreenshots &&
         (pageName === "运行概览" || pageName === "能力")
@@ -147,13 +162,15 @@ try {
         });
       const layout = await page.evaluate(() => {
         const root = document.documentElement;
-        const clipped = [...document.querySelectorAll("button, input, select")]
+        const clipped = [
+          ...document.querySelectorAll("button, input, select, textarea"),
+        ]
           .filter((element) => {
             const node = element;
-            return (
-              node.scrollWidth > node.clientWidth + 1 ||
-              node.scrollHeight > node.clientHeight + 1
-            );
+            return node.tagName === "TEXTAREA"
+              ? node.scrollWidth > node.clientWidth + 1
+              : node.scrollWidth > node.clientWidth + 1 ||
+                  node.scrollHeight > node.clientHeight + 1;
           })
           .map((element) => ({
             tag: element.tagName,
@@ -167,9 +184,12 @@ try {
           bodyScrollWidth: root.scrollWidth,
           horizontalOverflow: root.scrollWidth > innerWidth + 1,
           clipped,
+          advancedOpen: Boolean(
+            document.querySelector("details.advanced-config[open]"),
+          ),
         };
       });
-      pages.push({ name: pageName, ...layout });
+      pages.push({ name: pageName, advancedCount, ...layout });
     }
     reports.push({ target, title: await page.title(), pages });
     await context.close();
