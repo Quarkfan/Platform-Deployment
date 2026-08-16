@@ -18,7 +18,9 @@ On the server, run `scripts/deploy.sh` from `Platform-Deployment`. The script ru
 
 The complete child-first commit order, evidence checklist and rollback handoff are in `docs/release-handoff.md`.
 
-Run `scripts/smoke.sh` for an eleven-service health check. It uses the current user's Docker access when available and otherwise falls back to passwordless `sudo docker`; it fails with an actionable message when neither path is configured.
+Run `scripts/smoke.sh` for a twelve-service health check. It uses the current user's Docker access when available and otherwise falls back to passwordless `sudo docker`; it fails with an actionable message when neither path is configured.
+
+Run `scripts/extension-smoke.sh` after a plugin/provider release. It queries every center through the authenticated private network, validates generation/install/update metadata, and confirms that all seven center-owned PostgreSQL state tables are readable. It is intentionally read-only; lifecycle recovery tests must use a noncritical Provider, restore its original state, and record the restart evidence in the release handoff.
 
 Run `scripts/acceptance.sh` for the complete cross-center acceptance suite. It temporarily permits Browser Worker to reach the internal mock service and uses an exit trap to restore the production private-network restriction, stop the mock service and rerun smoke checks even when acceptance fails or is interrupted.
 

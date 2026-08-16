@@ -43,6 +43,7 @@ After login, open **使用手册** in the main navigation. It contains searchabl
 - `./scripts/backup.sh`: quiesced PostgreSQL and all persistent application volumes backup.
 - `./scripts/backup.sh --online`: non-quiesced operational snapshot when a short write pause is unacceptable.
 - `./scripts/verify-backup.sh <backup-directory>`: checksum and archive integrity verification.
+- `./scripts/extension-smoke.sh`: verify all seven extension inventories, durable metadata fields and PostgreSQL state tables without changing lifecycle state.
 - `./scripts/restore.sh --from <backup-directory> --confirm`: guarded full restore with a pre-restore backup and final smoke check.
 - `./scripts/acceptance.sh`: isolated end-to-end suite against the internal mock service; always restores Browser Worker's production network policy, stops the mock service and removes data that is explicitly scoped to the acceptance tenant on exit.
 - `./scripts/cleanup-acceptance.sh`: preview acceptance-data cleanup; add `--apply` only after a verified backup. Unattributed records are deliberately retained.

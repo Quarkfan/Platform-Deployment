@@ -25,7 +25,7 @@ Every platform iteration leaves a reproducible parent commit, deployable source 
 9. On the server run `scripts/deploy.sh`, `scripts/smoke.sh`, the focused acceptance suites and full acceptance required by blast radius.
 10. Update deployed evidence in module and parent STATUS/release docs, then commit child repositories first and the parent pointer last if evidence changed.
 
-For extension releases, verify `/v1/runtime-providers`, `/v1/runtime-profiles` and every center's `/v1/extensions` surface before UI acceptance. Runtime schema migration is additive (`rt.runtime_providers`, `rt.runtime_profiles`, `rt.session_events`) and supports rolling forward without deleting legacy Bot/session fields. Rollback keeps the additive tables; older images ignore them.
+For extension releases, run `scripts/extension-smoke.sh`, verify `/v1/runtime-providers`, `/v1/runtime-profiles` and every center's `/v1/extensions` surface before UI acceptance. Runtime schema migration is additive (`rt.runtime_providers`, `rt.runtime_profiles`, `rt.session_events`). Center-local extension migration is also additive (`extension_states` and `extension_events` in `mg`, `ch`, `mh`, `cr`, `sched`, `res` and `gov`). Rollback keeps these additive tables; older images ignore them.
 
 ## Rollback information
 
