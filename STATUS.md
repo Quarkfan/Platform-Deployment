@@ -1,6 +1,6 @@
 # Platform Deployment Status
 
-Version `0.1.0` is running on `zwj-ubuntu` from application source release `fd1b0de`. PostgreSQL, eleven application services and the Caddy edge are healthy. Console remains bound to host loopback, source sync excludes secrets, Compose E2E covers the cross-center execution paths, and the acceptance mock model is stopped after tests.
+Version `0.1.0` is running on `zwj-ubuntu` from application source release `2766bbb`. PostgreSQL, eleven application services and the Caddy edge are healthy. Console remains bound to host loopback, source sync excludes secrets, Compose E2E covers the cross-center execution paths, and the acceptance mock model is stopped after tests.
 
 The application and HTTPS edge are deployed for `https://tool.quarkfan.com`; the installed DigiCert certificate is valid through 2026-11-13. On 2026-08-16, however, multi-region public probes found that Tencent's upstream boundary resets SNI-bearing port 443 before packets reach the host. Host loopback HTTPS returns `200`, public HTTP returns the configured `302`, UFW is inactive, Docker's 443 rule is open, and a simultaneous host capture receives no public TLS packets. Canonical public access therefore remains blocked pending the Tencent Cloud firewall/ICP gate being cleared or the workload being moved behind an approved overseas/CDN edge. Secure cookies and HSTS must not be weakened as a workaround.
 
@@ -8,7 +8,9 @@ Operations include a quiesced or online backup of PostgreSQL plus all five persi
 
 The Dashboard exposes searchable **使用手册** from the lower-left auxiliary navigation. Configuration CRUD and advanced-setting controls were deployed on 2026-08-16 after a verified online backup. Unit/type/build checks, HTTPS smoke, complete Compose E2E, and desktop/mobile UI acceptance all pass. Acceptance runs clean their tenant-scoped database, resource, workspace, capability-package and attributable browser-session artifacts on exit. The cleanup command defaults to preview mode and does not delete records that cannot be proven to belong to acceptance.
 
-The navigation and list/detail acceptance now includes the “扩展与插件” page and enters Runtime Profile creation/advanced configuration. All sixteen pages passed at 1440x1000 and 390x844 with no horizontal overflow or clipped controls.
+The navigation and list/detail acceptance now includes the “插件与扩展” page and enters Runtime Profile creation/advanced configuration. All sixteen pages passed at 1440x1000 and 390x844 with no horizontal overflow or clipped controls.
+
+The Console information-architecture and interaction repair was deployed on 2026-08-16 after verified online backup `backups/20260816T055728Z`. Production runs Console `c338794` from parent source `2766bbb`. Loopback authentication passed, all twelve services reached `healthy`, and strict UI acceptance covered 32 desktop/mobile states with one contextual guide per business page, zero global horizontal overflow and zero clipped controls. Temporary screenshots of channels, models, capabilities, plugins, schedules and browser execution were reviewed for alignment and hierarchy, then removed from the server.
 
 Release reproducibility is gated by `scripts/release-preflight.sh` and `docs/release-handoff.md`. Source sync rejects tracked dirty modules by default, synchronizes the parent handoff snapshot and records exact child commits in `DEPLOYED-SOURCE-MANIFEST.md`. On 2026-08-16, backup `backups/20260816T035511Z` passed verification before all images were rebuilt and deployed. Twelve production services passed smoke, Runtime Profile survived a Runtime restart and was removed after the probe, full cross-center acceptance passed, acceptance data was cleaned, and production Browser Worker restrictions were restored.
 
