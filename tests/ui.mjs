@@ -14,13 +14,13 @@ const password = process.env.QA_PASSWORD;
 const output = process.env.QA_OUTPUT ?? "/artifacts";
 const captureScreenshots = process.env.QA_CAPTURE_SCREENSHOTS === "true";
 if (!username || !password) throw new Error("QA credentials are required");
-const advancedPages = new Set([
-  "机器人",
-  "通道",
-  "上下文",
-  "模型",
-  "能力",
-  "调度",
+const detailEntries = new Map([
+  ["机器人", "新增机器人"],
+  ["通道", "新增通道"],
+  ["上下文", "新增来源"],
+  ["模型", "新增 Provider"],
+  ["能力", "新增授权"],
+  ["调度", "新增任务"],
 ]);
 
 await mkdir(output, { recursive: true });
@@ -145,10 +145,19 @@ try {
         throw error;
       }
       await page.waitForTimeout(150);
+      const detailEntry = detailEntries.get(pageName);
+      if (detailEntry) {
+        await page
+          .getByRole("button", { name: detailEntry, exact: true })
+          .click();
+        await page
+          .getByRole("button", { name: "返回列表", exact: true })
+          .waitFor();
+      }
       const advancedCount = await page.locator("details.advanced-config").count();
-      if (advancedPages.has(pageName)) {
+      if (detailEntry) {
         if (!advancedCount)
-          throw new Error(`${pageName} 缺少高级配置入口`);
+          throw new Error(`${pageName} 详情页缺少高级配置入口`);
         await page.locator("details.advanced-config summary").first().click();
         await page.waitForTimeout(50);
       }
@@ -190,6 +199,10 @@ try {
         };
       });
       pages.push({ name: pageName, advancedCount, ...layout });
+      if (detailEntry)
+        await page
+          .getByRole("button", { name: "返回列表", exact: true })
+          .click();
     }
     reports.push({ target, title: await page.title(), pages });
     await context.close();
