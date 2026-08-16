@@ -15,13 +15,27 @@ const output = process.env.QA_OUTPUT ?? "/artifacts";
 const captureScreenshots = process.env.QA_CAPTURE_SCREENSHOTS === "true";
 if (!username || !password) throw new Error("QA credentials are required");
 const detailEntries = new Map([
-  ["机器人", "新增机器人"],
-  ["通道", "新增通道"],
-  ["上下文", "新增来源"],
-  ["模型", "新增 Provider"],
-  ["能力", "新增授权"],
-  ["扩展与插件", "新建 Profile"],
-  ["调度", "新增任务"],
+  ["机器人", { entry: "新增机器人" }],
+  ["通道", { entry: "新增通道" }],
+  ["上下文", { entry: "新增来源" }],
+  ["模型", { entry: "新增 Provider" }],
+  [
+    "能力",
+    {
+      tab: "机器人授权",
+      tabSelector: ".subview-tabs",
+      entry: "新增授权",
+    },
+  ],
+  [
+    "插件与扩展",
+    {
+      tab: "运行方案",
+      tabSelector: ".segmented-control",
+      entry: "新建 Profile",
+    },
+  ],
+  ["调度", { entry: "新增任务" }],
 ]);
 
 await mkdir(output, { recursive: true });
@@ -40,7 +54,7 @@ const pageNames = [
   "上下文",
   "模型",
   "能力",
-  "扩展与插件",
+  "插件与扩展",
   "执行",
   "调度",
   "资源",
@@ -147,14 +161,21 @@ try {
         throw error;
       }
       await page.waitForTimeout(150);
-      const detailEntry = detailEntries.get(pageName);
-      if (detailEntry) {
-        if (pageName === "扩展与插件")
+      const pageGuideCount =
+        pageName === "使用手册"
+          ? 0
+          : await page.locator("details.page-guide").count();
+      if (pageName !== "使用手册" && pageGuideCount !== 1)
+        throw new Error(`${pageName} 缺少唯一的本页指引`);
+      const detail = detailEntries.get(pageName);
+      if (detail) {
+        if (detail.tab)
           await page
-            .getByRole("button", { name: "Runtime Profile", exact: true })
+            .locator(detail.tabSelector)
+            .getByRole("button", { name: detail.tab, exact: true })
             .click();
         await page
-          .getByRole("button", { name: detailEntry, exact: true })
+          .getByRole("button", { name: detail.entry, exact: true })
           .click();
         await page
           .getByRole("button", { name: "返回列表", exact: true })
@@ -163,7 +184,7 @@ try {
       const advancedCount = await page
         .locator("details.advanced-config")
         .count();
-      if (detailEntry) {
+      if (detail) {
         if (!advancedCount)
           throw new Error(`${pageName} 详情页缺少高级配置入口`);
         await page.locator("details.advanced-config summary").first().click();
@@ -171,10 +192,18 @@ try {
       }
       if (
         captureScreenshots &&
-        (pageName === "运行概览" || pageName === "能力")
+        [
+          "运行概览",
+          "通道",
+          "模型",
+          "能力",
+          "插件与扩展",
+          "调度",
+          "浏览器",
+        ].includes(pageName)
       )
         await page.screenshot({
-          path: `${output}/${target.name}-${pageName === "能力" ? "capabilities" : "overview"}.png`,
+          path: `${output}/${target.name}-${pageName}.png`,
           fullPage: true,
         });
       const layout = await page.evaluate(() => {
@@ -206,8 +235,8 @@ try {
           ),
         };
       });
-      pages.push({ name: pageName, advancedCount, ...layout });
-      if (detailEntry)
+      pages.push({ name: pageName, pageGuideCount, advancedCount, ...layout });
+      if (detail)
         await page
           .getByRole("button", { name: "返回列表", exact: true })
           .click();
