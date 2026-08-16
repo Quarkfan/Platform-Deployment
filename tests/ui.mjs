@@ -161,12 +161,27 @@ try {
         throw error;
       }
       await page.waitForTimeout(150);
+      const pageGuideTrigger = page.getByRole("button", {
+        name: "本页指引",
+        exact: true,
+      });
       const pageGuideCount =
-        pageName === "使用手册"
-          ? 0
-          : await page.locator("details.page-guide").count();
+        pageName === "使用手册" ? 0 : await pageGuideTrigger.count();
       if (pageName !== "使用手册" && pageGuideCount !== 1)
         throw new Error(`${pageName} 缺少唯一的本页指引`);
+      if (pageName !== "使用手册") {
+        await pageGuideTrigger.click();
+        const guideDialog = page.getByRole("dialog", {
+          name: "本页指引",
+          exact: true,
+        });
+        await guideDialog.waitFor();
+        const guideSections = await guideDialog.locator("section").count();
+        if (guideSections !== 3)
+          throw new Error(`${pageName} 的本页指引内容不完整`);
+        await page.keyboard.press("Escape");
+        await guideDialog.waitFor({ state: "hidden" });
+      }
       const detail = detailEntries.get(pageName);
       if (detail) {
         if (detail.tab)
