@@ -238,6 +238,12 @@ try {
           ),
         };
       });
+      if (layout.horizontalOverflow)
+        throw new Error(
+          `${pageName} 页面宽度 ${layout.bodyScrollWidth}px 超出 ${layout.viewportWidth}px 视口`,
+        );
+      if (layout.clipped.length)
+        throw new Error(`${pageName} 存在 ${layout.clipped.length} 个控件内容被裁切`);
       pages.push({ name: pageName, pageGuideCount, advancedCount, ...layout });
       if (detail)
         await page
