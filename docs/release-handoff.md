@@ -8,7 +8,7 @@ Every platform iteration leaves a reproducible parent commit, deployable source 
 | -------------------------------- | ----------------------------------------------- | ----------------------------------- | ---------------------------------------- |
 | Domain behavior or contract      | README/STATUS/design/API/tests                  | STATUS, release/audit docs, gitlink | Compose/env/smoke/E2E when affected      |
 | Provider/plugin/runtime change   | provider docs, compatibility and contract tests | extensibility/release docs, gitlink | image, rollout, rollback and diagnostics |
-| Dashboard change                 | Console README/STATUS/manual/UI tests           | release/audit docs, gitlink         | UI acceptance and operator guide         |
+| Dashboard change                 | Console README/STATUS/manual/UI tests           | release/audit docs, gitlink         | UI acceptance (including hover-only health details) and operator guide |
 | Deployment-only change           | N/A                                             | STATUS and gitlink                  | scripts, operations, status and tests    |
 | Documentation-only clarification | owning docs/STATUS                              | relevant index/status               | only when operator behavior changes      |
 

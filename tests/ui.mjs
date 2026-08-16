@@ -207,12 +207,18 @@ try {
               (summary) =>
                 !summary.querySelector(".status-pill") ||
                 !/(最后检查|尚未执行健康检查)/.test(
+                  summary.querySelector(".status-pill")?.getAttribute("title") ??
+                    "",
+                ) ||
+                /(最后检查|尚未执行健康检查|响应延迟|最近错误)/.test(
                   summary.textContent ?? "",
                 ),
             ),
           );
         if (incompleteHealthSummary)
-          throw new Error(`${pageName} 的健康摘要缺少状态或最后检查时间`);
+          throw new Error(
+            `${pageName} 的健康标签缺少悬停详情，或把检查详情直接显示在行内`,
+          );
       }
       const detail = detailEntries.get(pageName);
       if (detail) {
