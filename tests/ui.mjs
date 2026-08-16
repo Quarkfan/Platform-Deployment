@@ -182,6 +182,38 @@ try {
         await page.keyboard.press("Escape");
         await guideDialog.waitFor({ state: "hidden" });
       }
+      const healthRowSelector =
+        pageName === "模型"
+          ? ".provider-section .model-entity-row"
+          : pageName === "通道"
+            ? ".channel-row"
+            : pageName === "插件与扩展"
+              ? ".model-entity-row"
+              : undefined;
+      let healthSummaryCount = 0;
+      if (healthRowSelector) {
+        const healthRows = await page.locator(healthRowSelector).count();
+        healthSummaryCount = await page
+          .locator(`${healthRowSelector} .health-summary`)
+          .count();
+        if (healthRows && healthSummaryCount !== healthRows)
+          throw new Error(
+            `${pageName} 有 ${healthRows} 个可检测对象，但只有 ${healthSummaryCount} 个健康摘要`,
+          );
+        const incompleteHealthSummary = await page
+          .locator(`${healthRowSelector} .health-summary`)
+          .evaluateAll((summaries) =>
+            summaries.some(
+              (summary) =>
+                !summary.querySelector(".status-pill") ||
+                !/(最后检查|尚未执行健康检查)/.test(
+                  summary.textContent ?? "",
+                ),
+            ),
+          );
+        if (incompleteHealthSummary)
+          throw new Error(`${pageName} 的健康摘要缺少状态或最后检查时间`);
+      }
       const detail = detailEntries.get(pageName);
       if (detail) {
         if (detail.tab)
@@ -207,6 +239,18 @@ try {
           throw new Error(`${pageName} 详情页缺少高级配置入口`);
         await page.locator("details.advanced-config summary").first().click();
         await page.waitForTimeout(50);
+        const submitFooters = page.locator(".form-actions:visible");
+        if ((await submitFooters.count()) !== 1)
+          throw new Error(`${pageName} 详情页缺少唯一的底部提交动作区`);
+        const submitFooterInvalid = await submitFooters.evaluate((footer) => {
+          const hasConfiguration = Boolean(
+            footer.querySelector("input, select, textarea, label, details"),
+          );
+          const isLast = footer.parentElement?.lastElementChild === footer;
+          return hasConfiguration || !isLast || !footer.querySelector("button");
+        });
+        if (submitFooterInvalid)
+          throw new Error(`${pageName} 的提交动作区不是纯按钮的表单末行`);
       }
       if (
         captureScreenshots &&
@@ -259,7 +303,13 @@ try {
         );
       if (layout.clipped.length)
         throw new Error(`${pageName} 存在 ${layout.clipped.length} 个控件内容被裁切`);
-      pages.push({ name: pageName, pageGuideCount, advancedCount, ...layout });
+      pages.push({
+        name: pageName,
+        pageGuideCount,
+        healthSummaryCount,
+        advancedCount,
+        ...layout,
+      });
       if (detail)
         await page
           .getByRole("button", { name: "返回列表", exact: true })

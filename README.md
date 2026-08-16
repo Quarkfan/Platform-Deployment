@@ -48,7 +48,7 @@ After login, open **使用手册** in the main navigation. It contains searchabl
 - `./scripts/restore.sh --from <backup-directory> --confirm`: guarded full restore with a pre-restore backup and final smoke check.
 - `./scripts/acceptance.sh`: isolated end-to-end suite against the internal mock service; always restores Browser Worker's production network policy, stops the mock service and removes data that is explicitly scoped to the acceptance tenant on exit.
 - `./scripts/cleanup-acceptance.sh`: preview acceptance-data cleanup; add `--apply` only after a verified backup. Unattributed records are deliberately retained.
-- `./scripts/ui-acceptance.sh`: desktop/mobile Dashboard validation through the configured public Console URL; it opens every contextual-help dialog, enters configuration details, checks advanced settings and layout with a disposable QA account, and exports no server screenshots.
+- `./scripts/ui-acceptance.sh`: desktop/mobile Dashboard validation through the configured public Console URL; it opens every contextual-help dialog, checks detectable-record health summaries, enters configuration details, verifies the buttons-only submit footer and advanced settings, and checks layout with a disposable QA account without exporting server screenshots.
 - `./scripts/release-preflight.sh [--deploy]`: verify module source, Docker build inputs, handoff documents and optionally live Compose configuration before release.
 - `./scripts/sync-source.sh`: synchronize clean module source plus the parent handoff snapshot and exact commit manifest; set `SYNC_ALLOW_DIRTY=true` only for an explicitly non-release diagnostic sync.
 - `docker compose up -d --build <service>`: rolling center update.
