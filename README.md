@@ -6,6 +6,7 @@ Production composition for the QuarkfanTools 3.x centers. It builds each service
 
 ```bash
 ./scripts/generate-env.sh
+./scripts/release-preflight.sh --deploy
 ./scripts/deploy.sh
 ./scripts/smoke.sh
 ```
@@ -46,6 +47,8 @@ After login, open **使用手册** in the main navigation. It contains searchabl
 - `./scripts/acceptance.sh`: isolated end-to-end suite against the internal mock service; always restores Browser Worker's production network policy, stops the mock service and removes data that is explicitly scoped to the acceptance tenant on exit.
 - `./scripts/cleanup-acceptance.sh`: preview acceptance-data cleanup; add `--apply` only after a verified backup. Unattributed records are deliberately retained.
 - `./scripts/ui-acceptance.sh`: desktop/mobile Dashboard layout validation through the configured public Console URL with a disposable QA account and no exported server screenshots.
+- `./scripts/release-preflight.sh [--deploy]`: verify module source, Docker build inputs, handoff documents and optionally live Compose configuration before release.
+- `./scripts/sync-source.sh`: synchronize clean module source plus the parent handoff snapshot and exact commit manifest; set `SYNC_ALLOW_DIRTY=true` only for an explicitly non-release diagnostic sync.
 - `docker compose up -d --build <service>`: rolling center update.
 - `docker compose down`: stop without deleting durable volumes.
 - `./scripts/configure-https.sh ...`: validate and install an operator-supplied certificate, save a mode-`0600` environment backup, and enable the `https` Compose profile.
@@ -53,3 +56,5 @@ After login, open **使用手册** in the main navigation. It contains searchabl
 Never use `docker compose down -v` in production unless permanent data deletion was explicitly approved.
 
 Browser Worker blocks localhost, private IP ranges and DNS names resolving to private addresses by default. Enable private networks only for a trusted isolated deployment with an explicit requirement.
+
+The complete release order, documentation gate and rollback handoff are in `docs/release-handoff.md`.

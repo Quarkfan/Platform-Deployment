@@ -12,9 +12,11 @@ Browser Worker denies private and loopback destinations by default, including DN
 
 ## Source deployment
 
-Run `scripts/sync-source.sh [user@host:/absolute/path]` from a development checkout. It synchronizes all platform modules while always excluding `.env`, `.env.*`, Git metadata, dependencies, build output, and coverage. Server secrets are server-owned and must never be synchronized from a workstation.
+Run `scripts/release-preflight.sh` and then `scripts/sync-source.sh [user@host:/absolute/path]` from a clean development checkout. It synchronizes all platform modules while always excluding `.env`, `.env.*`, Git metadata, dependencies, build output, and coverage. It also copies a parent handoff snapshot and writes `DEPLOYED-SOURCE-MANIFEST.md` with exact child commits. Server secrets are server-owned and must never be synchronized from a workstation.
 
-On the server, run `scripts/deploy.sh` from `Platform-Deployment`. The script validates Compose, builds sequentially for small hosts, starts the stack, and prints service status.
+On the server, run `scripts/deploy.sh` from `Platform-Deployment`. The script runs release preflight, validates Compose, builds sequentially for small hosts, starts the stack, and prints service status.
+
+The complete child-first commit order, evidence checklist and rollback handoff are in `docs/release-handoff.md`.
 
 Run `scripts/smoke.sh` for an eleven-service health check. It uses the current user's Docker access when available and otherwise falls back to passwordless `sudo docker`; it fails with an actionable message when neither path is configured.
 
