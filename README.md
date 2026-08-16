@@ -57,6 +57,8 @@ After login, open **使用手册** in the main navigation. It contains searchabl
 
 Never use `docker compose down -v` in production unless permanent data deletion was explicitly approved.
 
+For a temporary visual release review, set `QA_CAPTURE_SCREENSHOTS=true` and an operator-controlled `QA_ARTIFACT_DIR`. The script copies selected screenshots and the structural report before removing the disposable account and container files. Treat screenshots as operational data and delete them after review.
+
 Browser Worker blocks localhost, private IP ranges and DNS names resolving to private addresses by default. Enable private networks only for a trusted isolated deployment with an explicit requirement.
 
 The complete release order, documentation gate and rollback handoff are in `docs/release-handoff.md`.

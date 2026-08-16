@@ -6,10 +6,16 @@ qft_select_docker
 
 qa_username="codexqa$(date +%s)${RANDOM}"
 qa_password="$(openssl rand -hex 24)"
+qa_capture_screenshots="${QA_CAPTURE_SCREENSHOTS:-false}"
+qa_artifact_dir="${QA_ARTIFACT_DIR:-}"
 user_created=false
 
 cleanup() {
   local status=$?
+  if [[ "$qa_capture_screenshots" == true && -n "$qa_artifact_dir" && -n "${browser_container:-}" ]]; then
+    mkdir -p "$qa_artifact_dir"
+    qft_docker cp "${browser_container}:/tmp/qft-ui-qa/." "$qa_artifact_dir" >/dev/null 2>&1 || status=1
+  fi
   if [[ "$user_created" == true ]]; then
     qft_docker compose exec -T \
       -e QA_USERNAME="$qa_username" \
@@ -50,6 +56,6 @@ qft_docker compose exec -T \
   -e QA_PASSWORD="$qa_password" \
   -e QA_BASE_URL="$qa_base_url" \
   -e QA_OUTPUT=/tmp/qft-ui-qa \
-  -e QA_CAPTURE_SCREENSHOTS=false \
+  -e QA_CAPTURE_SCREENSHOTS="$qa_capture_screenshots" \
   -e QA_PLAYWRIGHT_BASE=/app \
   browser-worker node /tmp/qft-ui.mjs

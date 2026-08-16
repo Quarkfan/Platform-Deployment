@@ -26,6 +26,8 @@ Run `scripts/acceptance.sh` for the complete cross-center acceptance suite. It t
 
 Run `scripts/ui-acceptance.sh` to validate all sixteen Dashboard pages at desktop and mobile viewports. For configuration pages it enters a create/detail state, including Runtime Profile creation, opens advanced configuration, verifies the return-to-list path, then checks overflow and control clipping. The script creates a random disposable QA account, captures only structural layout results, exports no screenshots, and removes the account and temporary files on every exit path.
 
+Set `QA_CAPTURE_SCREENSHOTS=true QA_ARTIFACT_DIR=/absolute/operator/path` only for a temporary visual release review. The selected screenshots and report are copied before cleanup; they may contain operational metadata and must not be committed or retained after the review.
+
 Run `scripts/loopback-auth-smoke.sh` after Console authentication or HTTPS configuration changes. It creates a guarded disposable account, signs in through the host loopback endpoint, verifies that the cookie is host-local and non-Secure, confirms `/api/me` accepts the session, and removes the account and temporary files on every exit path. The browser login performs the same session check before reloading and leaves an actionable error on screen if the cookie was rejected.
 
 ## Public HTTPS
