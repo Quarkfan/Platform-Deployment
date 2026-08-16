@@ -22,6 +22,7 @@ for module in "${modules[@]}"; do
     --exclude='.git/' \
     --exclude='.env' \
     --exclude='.env.*' \
+    --exclude='certs/' \
     --exclude='node_modules/' \
     --exclude='dist/' \
     --exclude='dist-server/' \

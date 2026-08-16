@@ -1,4 +1,5 @@
 .env
+.env.*
 backups/
 artifacts/
-
+certs/

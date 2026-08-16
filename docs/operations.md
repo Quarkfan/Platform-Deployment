@@ -2,9 +2,9 @@
 
 ## Security boundary
 
-Only the Console is host-bound. Center APIs and PostgreSQL remain on the private Compose network and require the shared internal service token. Credentials are encrypted by Governance; environment-backed bootstrap credentials are transitional and must not be committed.
+Only the deployment edge and the loopback Console endpoint are host-bound. Center APIs and PostgreSQL remain on the private Compose network and require the shared internal service token. Credentials are encrypted by Governance; environment-backed bootstrap credentials are transitional and must not be committed.
 
-The default remote access pattern is an SSH tunnel. Public HTTP is intentionally unsupported because it would expose password and session traffic without transport encryption.
+The default remote access pattern is an SSH tunnel. Public access requires the `https` Compose profile; plaintext HTTP redirects to HTTPS and must never carry password or session traffic.
 
 The initial administrator is marked `must_change_password`. Until the password is changed, only `/api/me` and `/api/account/change-password` are available to that session.
 
@@ -21,6 +21,32 @@ Run `scripts/smoke.sh` for an eleven-service health check. It uses the current u
 Run `scripts/acceptance.sh` for the complete cross-center acceptance suite. It temporarily permits Browser Worker to reach the internal mock service and uses an exit trap to restore the production private-network restriction, stop the mock service and rerun smoke checks even when acceptance fails or is interrupted.
 
 Run `scripts/ui-acceptance.sh` to validate all fourteen Dashboard pages at desktop and mobile viewports. The script creates a random disposable QA account, captures only structural layout results, exports no screenshots, and removes the account and temporary files on every exit path.
+
+## Public HTTPS
+
+Before enabling public access, point the domain's A record at the host and obtain a PEM certificate file containing the leaf certificate followed by its intermediate chain, plus the matching unencrypted PEM private key. Install them with:
+
+```bash
+./scripts/configure-https.sh \
+  --domain tool.example.com \
+  --certificate /secure/path/fullchain.pem \
+  --private-key /secure/path/privkey.pem
+sudo -n docker compose stop console
+./scripts/deploy.sh
+./scripts/smoke.sh
+```
+
+Stopping Console before the first transition releases a previously public port 80 mapping. Subsequent deployments do not require that step. The configuration script checks the certificate syntax, exact Subject Alternative Name, seven-day minimum remaining validity, full-chain presence, and public-key match before changing `.env`. It keeps the previous environment as an ignored mode-`0600` `.env.before-https-*` file. The edge container runs as the installing operator's UID/GID so its non-root process can read the mode-`0600` private key without granting broader filesystem capabilities.
+
+Verify the public boundary after every certificate change:
+
+```bash
+curl -I http://tool.example.com/
+curl --fail --show-error https://tool.example.com/healthz
+openssl s_client -connect tool.example.com:443 -servername tool.example.com -verify_return_error </dev/null
+```
+
+Renew and reinstall the certificate before its `notAfter` date, then recreate only the edge service with `docker compose up -d --force-recreate edge`. Certificate files and private keys are not included in application backups; retain them in the operator-controlled secret escrow.
 
 ## Recovery
 

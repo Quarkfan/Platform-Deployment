@@ -1,0 +1,23 @@
+{
+	admin localhost:2019
+	auto_https disable_redirects
+}
+
+http:// {
+	redir https://{$TLS_DOMAIN}{uri} permanent
+}
+
+https://{$TLS_DOMAIN} {
+	tls /etc/caddy/tls/fullchain.pem /etc/caddy/tls/privkey.pem
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "same-origin"
+		-Server
+	}
+
+	reverse_proxy console:8080
+}

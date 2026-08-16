@@ -16,7 +16,20 @@ The default Console binding is `127.0.0.1:8080`. Reach a remote host through an 
 ssh -L 8080:127.0.0.1:8080 zwj-ubuntu
 ```
 
-Then open `http://localhost:8080`. For public access, place a real-domain TLS reverse proxy in front and set `BETTER_AUTH_URL`, `TRUSTED_ORIGINS`, `AUTH_SECURE_COOKIES=true`, and `CONSOLE_BIND_ADDRESS=0.0.0.0`.
+Then open `http://localhost:8080`.
+
+For public access, install a complete PEM chain and its matching unencrypted PEM private key:
+
+```bash
+./scripts/configure-https.sh \
+  --domain tool.example.com \
+  --certificate /secure/path/fullchain.pem \
+  --private-key /secure/path/privkey.pem
+./scripts/deploy.sh
+./scripts/smoke.sh
+```
+
+The HTTPS profile runs Caddy on public ports 80 and 443, redirects HTTP to HTTPS, sets transport security headers, enables secure authentication cookies, and keeps Console itself on host loopback. TLS material is installed mode `0600` under the ignored `certs/` directory and is never source-synchronized or committed.
 
 The bootstrap administrator must change the initial password after first login before management APIs become available.
 
@@ -32,6 +45,7 @@ The bootstrap administrator must change the initial password after first login b
 - `./scripts/ui-acceptance.sh`: desktop/mobile Dashboard layout validation with a disposable QA account and no exported server screenshots.
 - `docker compose up -d --build <service>`: rolling center update.
 - `docker compose down`: stop without deleting durable volumes.
+- `./scripts/configure-https.sh ...`: validate and install an operator-supplied certificate, save a mode-`0600` environment backup, and enable the `https` Compose profile.
 
 Never use `docker compose down -v` in production unless permanent data deletion was explicitly approved.
 
