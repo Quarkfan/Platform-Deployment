@@ -172,7 +172,10 @@ try {
         if (detail.tab)
           await page
             .locator(detail.tabSelector)
-            .getByRole("button", { name: detail.tab, exact: true })
+            .getByRole(
+              detail.tabSelector === ".subview-tabs" ? "tab" : "button",
+              { name: detail.tab, exact: true },
+            )
             .click();
         await page
           .getByRole("button", { name: detail.entry, exact: true })
