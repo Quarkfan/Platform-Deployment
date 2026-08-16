@@ -17,7 +17,7 @@ The default Console binding is `127.0.0.1:8080`. Reach a remote host through an 
 ssh -L 8080:127.0.0.1:8080 zwj-ubuntu
 ```
 
-Then open `http://localhost:8080`.
+Then open `http://127.0.0.1:8080` (or `http://localhost:8080`). The Console uses a host-local non-Secure cookie only for exact loopback hosts so an SSH tunnel can retain a session. Public hosts continue to require HTTPS and Secure cookies; never disable secure cookies globally to make a tunnel work.
 
 For public access, install a complete PEM chain and its matching unencrypted PEM private key:
 
@@ -44,6 +44,7 @@ After login, open **使用手册** in the main navigation. It contains searchabl
 - `./scripts/backup.sh --online`: non-quiesced operational snapshot when a short write pause is unacceptable.
 - `./scripts/verify-backup.sh <backup-directory>`: checksum and archive integrity verification.
 - `./scripts/extension-smoke.sh`: verify all seven extension inventories, durable metadata fields and PostgreSQL state tables without changing lifecycle state.
+- `./scripts/loopback-auth-smoke.sh`: create a disposable account and verify loopback sign-in, host-local cookie persistence and `/api/me`, then remove all temporary state.
 - `./scripts/restore.sh --from <backup-directory> --confirm`: guarded full restore with a pre-restore backup and final smoke check.
 - `./scripts/acceptance.sh`: isolated end-to-end suite against the internal mock service; always restores Browser Worker's production network policy, stops the mock service and removes data that is explicitly scoped to the acceptance tenant on exit.
 - `./scripts/cleanup-acceptance.sh`: preview acceptance-data cleanup; add `--apply` only after a verified backup. Unattributed records are deliberately retained.

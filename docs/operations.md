@@ -4,7 +4,7 @@
 
 Only the deployment edge and the loopback Console endpoint are host-bound. Center APIs and PostgreSQL remain on the private Compose network and require the shared internal service token. Credentials are encrypted by Governance; environment-backed bootstrap credentials are transitional and must not be committed.
 
-The default remote access pattern is an SSH tunnel. Public access requires the `https` Compose profile; plaintext HTTP redirects to HTTPS and must never carry password or session traffic.
+The default remote access pattern is an SSH tunnel to `http://127.0.0.1:8080`. The Console selects a host-local non-Secure cookie only for exact loopback hosts and keeps public authentication on Secure cookies backed by the same account database. Public access requires the `https` Compose profile; plaintext public HTTP redirects to HTTPS and must never carry password or session traffic. Do not set `AUTH_SECURE_COOKIES=false` globally as a tunnel workaround.
 
 The initial administrator is marked `must_change_password`. Until the password is changed, only `/api/me` and `/api/account/change-password` are available to that session.
 
@@ -25,6 +25,8 @@ Run `scripts/extension-smoke.sh` after a plugin/provider release. It queries eve
 Run `scripts/acceptance.sh` for the complete cross-center acceptance suite. It temporarily permits Browser Worker to reach the internal mock service and uses an exit trap to restore the production private-network restriction, stop the mock service and rerun smoke checks even when acceptance fails or is interrupted.
 
 Run `scripts/ui-acceptance.sh` to validate all sixteen Dashboard pages at desktop and mobile viewports. For configuration pages it enters a create/detail state, including Runtime Profile creation, opens advanced configuration, verifies the return-to-list path, then checks overflow and control clipping. The script creates a random disposable QA account, captures only structural layout results, exports no screenshots, and removes the account and temporary files on every exit path.
+
+Run `scripts/loopback-auth-smoke.sh` after Console authentication or HTTPS configuration changes. It creates a guarded disposable account, signs in through the host loopback endpoint, verifies that the cookie is host-local and non-Secure, confirms `/api/me` accepts the session, and removes the account and temporary files on every exit path. The browser login performs the same session check before reloading and leaves an actionable error on screen if the cookie was rejected.
 
 ## Public HTTPS
 
